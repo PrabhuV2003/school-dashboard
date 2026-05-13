@@ -100,7 +100,7 @@ export default function Attendance() {
         })),
       }
 
-      await triggerN8nWebhook('/attendance-alert', payload)
+      await triggerN8nWebhook('attendance-alert', payload)
       setSubmitted(true)
     } catch (err) {
       alert('Failed to submit attendance. Please try again.')
