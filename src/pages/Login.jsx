@@ -140,34 +140,21 @@ export default function Login() {
 
             {/* Demo credentials hint */}
             <div className="mt-6 pt-4 border-t border-slate-100">
-              <p className="text-xs text-slate-400 text-center
-                mb-3">
+              <p className="text-xs text-slate-400 text-center mb-3">
                 Demo credentials
               </p>
-              <div className="flex gap-2 justify-center flex-wrap">
+              <div className="flex gap-2 justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     setEmail('admin@stmarys.edu')
-                    setPassword('admin123')
+                    setPassword('admin@123')
                   }}
                   className="text-xs px-3 py-1.5 bg-slate-100
-                    hover:bg-slate-200 rounded-full text-slate-600
-                    transition-colors"
+        hover:bg-slate-200 rounded-full text-slate-600
+        transition-colors"
                 >
                   Admin login
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('priya@stmarys.edu')
-                    setPassword('teacher123')
-                  }}
-                  className="text-xs px-3 py-1.5 bg-slate-100
-                    hover:bg-slate-200 rounded-full text-slate-600
-                    transition-colors"
-                >
-                  Teacher login
                 </button>
               </div>
             </div>

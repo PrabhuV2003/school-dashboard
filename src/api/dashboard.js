@@ -52,10 +52,11 @@ export async function getFeesSummary() {
 
 // Fetch all users (teachers)
 export async function getTeachers() {
-  const response = await supabase.get('/users', {
+  const response = await supabase.get('/profiles', {
     params: {
       role: 'eq.teacher',
       select: 'id,name,email,class_assigned,phone',
+      order: 'created_at.desc',
     },
   })
   return response.data

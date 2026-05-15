@@ -1,24 +1,40 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { setAuthToken, clearAuthToken } from '../api/supabase'
 
 export const useAuthStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
 
-      login: (userData) => set({
-        user: userData,
-        isAuthenticated: true,
-      }),
+      login: (userData) => {
+        // Restore JWT on login
+        setAuthToken(userData.access_token)
+        set({
+          user: userData,
+          isAuthenticated: true,
+        })
+      },
 
-      logout: () => set({
-        user: null,
-        isAuthenticated: false,
-      }),
+      logout: () => {
+        clearAuthToken()
+        set({
+          user: null,
+          isAuthenticated: false,
+        })
+      },
+
+      // Called on app load to restore token from localStorage
+      restoreToken: () => {
+        const { user } = get()
+        if (user?.access_token) {
+          setAuthToken(user.access_token)
+        }
+      },
     }),
     {
-      name: 'school-auth', // saves to localStorage
+      name: 'school-auth',
     }
   )
 )

@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { createTeacherAccount } from './auth'
 
 // Get all students for a specific class
 export async function getStudentsByClass(className) {
@@ -76,4 +77,47 @@ export async function triggerN8nWebhook(webhookPath, payload) {
   })
   if (!response.ok) throw new Error('Webhook trigger failed')
   return response.json()
+}
+
+// Generate a random secure password
+export function generatePassword() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  const special = '@#$!'
+  let password = ''
+  for (let i = 0; i < 8; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  password += special.charAt(Math.floor(Math.random() * special.length))
+  return password
+}
+
+// Create teacher account + trigger WhatsApp
+export async function createTeacher({
+  name,
+  email,
+  classAssigned,
+  phone,
+}) {
+  const password = generatePassword()
+
+  // Step 1 — Create Supabase Auth account
+  await createTeacherAccount({
+    name,
+    email,
+    password,
+    classAssigned,
+    phone,
+  })
+
+  // Step 2 — Trigger n8n webhook to send WhatsApp
+  await triggerN8nWebhook('create-teacher', {
+    name,
+    email,
+    phone,
+    classAssigned,
+    password,
+    appUrl: import.meta.env.VITE_APP_URL,
+  })
+
+  return { email, password }
 }
