@@ -10,10 +10,13 @@ export async function loginUser(email, password) {
 
   const { access_token, user } = response.data
 
-  // Attach JWT to all future requests
+  if (!access_token || !user) {
+    throw new Error('Invalid login response from server')
+  }
+
   setAuthToken(access_token)
 
-  // Fetch profile (role, name, class_assigned)
+  // Fetch profile with the JWT token
   const profileRes = await supabase.get('/profiles', {
     params: {
       id: `eq.${user.id}`,
@@ -25,7 +28,7 @@ export async function loginUser(email, password) {
   })
 
   if (!profileRes.data || profileRes.data.length === 0) {
-    throw new Error('Profile not found. Contact admin.')
+    throw new Error('Profile not found. Contact your admin.')
   }
 
   return {
@@ -34,7 +37,30 @@ export async function loginUser(email, password) {
   }
 }
 
-// Create a new teacher account (called from admin dashboard)
+// Helper — wait for trigger to create profile then return it
+async function waitForProfile(userId, accessToken, retries = 5) {
+  for (let i = 0; i < retries; i++) {
+    const res = await supabase.get('/profiles', {
+      params: {
+        id: `eq.${userId}`,
+        select: 'id,name,email,role,class_assigned,phone',
+      },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    if (res.data && res.data.length > 0) {
+      return res.data[0]
+    }
+
+    // Wait 800ms before retrying
+    await new Promise((resolve) => setTimeout(resolve, 800))
+  }
+  throw new Error('Profile creation timed out. Try again.')
+}
+
+// Create teacher account via Supabase Admin API
 export async function createTeacherAccount({
   name,
   email,
@@ -42,58 +68,46 @@ export async function createTeacherAccount({
   classAssigned,
   phone,
 }) {
-  // Step 1 — create auth user via Supabase Admin API
   const BASE_URL = import.meta.env.VITE_SUPABASE_URL
   const SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY
 
-  try {
-    const response = await axios.post(
-      `${BASE_URL}/auth/v1/admin/users`,
-      {
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          name,
-          role: 'teacher',
-          class_assigned: classAssigned,
-          phone,
-        },
-      },
-      {
-        headers: {
-          apikey: SERVICE_KEY,
-          Authorization: `Bearer ${SERVICE_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+  if (!SERVICE_KEY) {
+    throw new Error('Service key not configured. Check your .env file.')
+  }
 
-    // Step 2 — create profile record in the database
-    const profileRes = await axios.post(
-      `${BASE_URL}/rest/v1/profiles`,
-      {
-        id: response.data.user.id,
+  // Create the auth user
+  const response = await axios.post(
+    `${BASE_URL}/auth/v1/admin/users`,
+    {
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
         name,
-        email,
         role: 'teacher',
         class_assigned: classAssigned,
         phone,
       },
-      {
-        headers: {
-          apikey: SERVICE_KEY,
-          Authorization: `Bearer ${SERVICE_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    },
+    {
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  )
 
-    return response.data
-  } catch (error) {
-    console.error('Create teacher error:', error.response?.data || error.message)
-    throw new Error(error.response?.data?.msg || error.message)
+  const newUser = response.data
+
+  if (!newUser || !newUser.id) {
+    throw new Error('User creation failed — no user returned')
   }
+
+  // Wait for the DB trigger to create the profile
+  await waitForProfile(newUser.id, SERVICE_KEY)
+
+  return newUser
 }
 
 export function logoutUser() {

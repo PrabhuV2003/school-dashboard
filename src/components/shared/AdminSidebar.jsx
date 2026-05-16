@@ -8,6 +8,7 @@ import {
   GraduationCap,
   LogOut,
   ChevronRight,
+  BookOpen,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
@@ -34,6 +35,11 @@ const navItems = [
     label: 'Teachers',
     path: '/admin/teachers',
     icon: Users,
+  },
+  {
+    label: 'FAQ & School Info',
+    path: '/admin/faq',
+    icon: BookOpen,
   },
 ]
 

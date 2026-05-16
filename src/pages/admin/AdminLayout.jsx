@@ -4,6 +4,7 @@ import AdminOverview from './AdminOverview'
 import WaLog from './WaLog'
 import WaErrors from './WaErrors'
 import Teachers from './Teachers'
+import FaqManager from './FaqManager'
 
 export default function AdminLayout() {
   return (
@@ -15,6 +16,7 @@ export default function AdminLayout() {
           <Route path="wa-log" element={<WaLog />} />
           <Route path="errors" element={<WaErrors />} />
           <Route path="teachers" element={<Teachers />} />
+          <Route path="faq" element={<FaqManager />} />
         </Routes>
       </main>
     </div>
